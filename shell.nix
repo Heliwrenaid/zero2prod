@@ -1,5 +1,26 @@
-{ pkgs ? import <nixpkgs> {} }:
+let
+  rust_overlay = import (builtins.fetchTarball "https://github.com/oxalica/rust-overlay/archive/master.tar.gz");
+  pkgs = import <nixpkgs> { overlays = [ rust_overlay ]; };
+  rustVersion = "1.78.0";
+  rust = pkgs.rust-bin.stable.${rustVersion}.default.override {
+    extensions = [
+      "rust-src"
+      "rust-analyzer"
+    ];
+  };
+in
 pkgs.mkShell {
-  nativeBuildInputs = with pkgs; [ rustc cargo gcc rustfmt clippy libiconv openssl pkg-config sqlx-cli postgresql dbeaver];
-  RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
+  buildInputs = [
+    rust
+  ] ++ (with pkgs; [
+    # gcc
+    # rustfmt
+    # clippy
+    pkg-config
+    libiconv
+    openssl
+    postgresql
+    dbeaver
+  ]);
+  RUST_BACKTRACE = 1;
 }
