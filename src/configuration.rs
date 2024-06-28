@@ -1,11 +1,13 @@
+use crate::email_client::EmailClient;
 use secrecy::{ExposeSecret, Secret};
+use serde::{Deserialize, Serialize};
 use serde_aux::field_attributes::deserialize_number_from_string;
 use sqlx::postgres::{PgConnectOptions, PgSslMode};
 use sqlx::ConnectOptions;
 
 use crate::domain::SubscriberEmail;
 
-#[derive(serde::Deserialize, Clone)]
+#[derive(Deserialize, Clone)]
 pub struct Settings {
     pub database: DatabaseSettings,
     pub application: ApplicationSettings,
@@ -13,15 +15,26 @@ pub struct Settings {
     pub redis_uri: Secret<String>,
 }
 
-#[derive(serde::Deserialize, Clone)]
+#[derive(Deserialize, Clone)]
 pub struct EmailClientSettings {
-    pub base_url: String,
+    pub base_url: Url,
     pub sender_email: String,
     pub authorization_token: Secret<String>,
     pub timeout_milliseconds: u64,
 }
 
 impl EmailClientSettings {
+    pub fn client(self) -> EmailClient {
+        let sender_email = self.sender().expect("Invalid sender email address.");
+        let timeout = self.timeout();
+        EmailClient::new(
+            self.base_url.0,
+            sender_email,
+            self.authorization_token,
+            timeout,
+        )
+    }
+
     pub fn sender(&self) -> Result<SubscriberEmail, String> {
         SubscriberEmail::parse(self.sender_email.clone())
     }
@@ -31,7 +44,7 @@ impl EmailClientSettings {
     }
 }
 
-#[derive(serde::Deserialize, Clone)]
+#[derive(Deserialize, Clone)]
 pub struct DatabaseSettings {
     pub username: String,
     pub password: Secret<String>,
@@ -65,7 +78,7 @@ impl DatabaseSettings {
     }
 }
 
-#[derive(serde::Deserialize, Clone)]
+#[derive(Deserialize, Clone)]
 pub struct ApplicationSettings {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
@@ -125,5 +138,35 @@ impl TryFrom<String> for Environment {
                 other
             )),
         }
+    }
+}
+
+#[derive(Clone)]
+pub struct Url(pub reqwest::Url);
+
+impl Serialize for Url {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.0.to_string().serialize(serializer)
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for Url {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let url = String::deserialize(deserializer)?;
+        let url = reqwest::Url::parse(&url)
+            .map_err(|_| serde::de::Error::custom("String is not a valid URL"))?;
+        Ok(Url(url))
+    }
+}
+
+impl Into<Url> for reqwest::Url {
+    fn into(self) -> Url {
+        Url(self)
     }
 }
