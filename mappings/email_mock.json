@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/email"
+  },
+  "response": {
+    "status": 200,
+    "body": "This is a successful response",
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

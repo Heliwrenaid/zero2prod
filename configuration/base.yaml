@@ -10,7 +10,7 @@ database:
   database_name: "newsletter"
 
 email_client:
-  base_url: "http://localhost"
+  base_url: "http://localhost:8080"
   sender_email: "test@gmail.com"
   authorization_token: "my-secret-token"
   timeout_milliseconds: 10000

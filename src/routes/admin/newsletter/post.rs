@@ -1,4 +1,4 @@
-use crate::authentication::UserId;
+use crate::authentication::AuthenticatedUser;
 use crate::idempotency::{save_response, try_processing, IdempotencyKey, NextAction};
 use crate::utils::e400;
 use crate::utils::{e500, see_other};
@@ -20,12 +20,12 @@ pub struct BodyData {
 #[tracing::instrument(
     name = "Publish a newsletter issue",
     skip_all,
-    fields(user_id=%&*user_id)
+    fields(user_id=%&user.user_id)
 )]
 pub async fn publish_newsletter(
     body: web::Form<BodyData>,
     pool: web::Data<PgPool>,
-    user_id: web::ReqData<UserId>,
+    user: web::ReqData<AuthenticatedUser>,
 ) -> Result<HttpResponse, actix_web::Error> {
     let BodyData {
         title,
@@ -34,7 +34,7 @@ pub async fn publish_newsletter(
         idempotency_key,
     } = body.0;
     let idempotency_key: IdempotencyKey = idempotency_key.try_into().map_err(e400)?;
-    let mut transaction = match try_processing(&pool, &idempotency_key, **user_id)
+    let mut transaction = match try_processing(&pool, &idempotency_key, user.user_id)
         .await
         .map_err(e500)?
     {
@@ -55,7 +55,7 @@ pub async fn publish_newsletter(
         .map_err(e500)?;
     let response = see_other("/admin/newsletters");
 
-    let response = save_response(transaction, &idempotency_key, **user_id, response)
+    let response = save_response(transaction, &idempotency_key, user.user_id, response)
         .await
         .map_err(e500)?;
     success_message().send();

@@ -1,8 +1,11 @@
 use std::net::TcpListener;
 
 use crate::{
-    authentication::reject_anonymous_users,
-    routes::{publish_newsletter, send_newsletter_issue_form},
+    authentication::{reject_anonymous_users, reject_not_admin_users},
+    routes::{
+        activate_account, activate_account_form, invite_collaborator, invite_collaborator_form,
+        publish_newsletter, send_newsletter_issue_form,
+    },
 };
 use actix_session::{storage::RedisSessionStore, SessionMiddleware};
 use actix_web::{
@@ -95,6 +98,11 @@ async fn run(
             .route("/", web::get().to(home))
             .route("/login", web::get().to(login_form))
             .route("/login", web::post().to(login))
+            .route(
+                "/collabolators/activate",
+                web::get().to(activate_account_form),
+            )
+            .route("/collabolators/activate", web::post().to(activate_account))
             .service(
                 web::scope("/admin")
                     .wrap(from_fn(reject_anonymous_users))
@@ -103,7 +111,13 @@ async fn run(
                     .route("/password", web::post().to(change_password))
                     .route("/logout", web::post().to(log_out))
                     .route("/newsletters", web::get().to(send_newsletter_issue_form))
-                    .route("/newsletters", web::post().to(publish_newsletter)),
+                    .route("/newsletters", web::post().to(publish_newsletter))
+                    .service(
+                        web::scope("/collabolators")
+                            .wrap(from_fn(reject_not_admin_users))
+                            .route("", web::get().to(invite_collaborator_form))
+                            .route("", web::post().to(invite_collaborator)),
+                    ),
             )
             .app_data(db_pool.clone())
             .app_data(email_client.clone())

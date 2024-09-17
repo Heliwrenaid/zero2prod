@@ -1,12 +1,14 @@
 use actix_web::{web, HttpResponse, ResponseError};
 use anyhow::Context;
 use chrono::Utc;
-use rand::{distributions::Alphanumeric, Rng};
 use reqwest::StatusCode;
 use sqlx::{Executor, PgPool, Postgres, Transaction};
 use uuid::Uuid;
 
-use crate::{domain::NewSubscriber, email_client::EmailClient, startup::ApplicationBaseUrl};
+use crate::{
+    domain::NewSubscriber, email_client::EmailClient, startup::ApplicationBaseUrl,
+    utils::generate_token,
+};
 
 #[derive(serde::Deserialize)]
 pub struct FormData {
@@ -39,7 +41,7 @@ pub async fn subscribe(
         .await
         .context("Failed to insert new subscriber in the database.")?;
 
-    let subscription_token = generate_subscription_token();
+    let subscription_token = generate_token();
     store_token(&mut transaction, subscriber_id, &subscription_token)
         .await
         .context("Failed to store the confirmation token for a new subscriber.")?;
@@ -128,15 +130,6 @@ pub async fn send_confirmation_email(
     email_client
         .send_email(&new_subscriber.email, "Welcome!", &html_body, &plain_body)
         .await
-}
-
-/// Generate a random 25-characters-long case-sensitive subscription token.
-fn generate_subscription_token() -> String {
-    let mut rng = rand::thread_rng();
-    std::iter::repeat_with(|| rng.sample(Alphanumeric))
-        .map(char::from)
-        .take(25)
-        .collect()
 }
 
 #[derive(thiserror::Error)]

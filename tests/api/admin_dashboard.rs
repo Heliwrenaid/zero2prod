@@ -20,15 +20,15 @@ async fn logout_clears_session_state() {
 
     // Act - Part 1 - Login
     let login_body = serde_json::json!({
-        "username": &app.test_user.username,
-        "password": &app.test_user.password
+        "username": &app.admin_user.username,
+        "password": &app.admin_user.password
     });
     let response = app.post_login(&login_body).await;
     assert_is_redirect_to(&response, "/admin/dashboard");
 
     // Act - Part 2 - Follow the redirect
     let html_page = app.get_admin_dashboard_html().await;
-    assert!(html_page.contains(&format!("Welcome {}", app.test_user.username)));
+    assert!(html_page.contains(&format!("Welcome {}", app.admin_user.username)));
 
     // Act - Part 3 - Logout
     let response = app.post_logout().await;

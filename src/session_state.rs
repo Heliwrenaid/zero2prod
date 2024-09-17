@@ -3,23 +3,24 @@ use actix_session::{Session, SessionGetError, SessionInsertError};
 use actix_web::dev::Payload;
 use actix_web::{FromRequest, HttpRequest};
 use std::future::{ready, Ready};
-use uuid::Uuid;
+
+use crate::authentication::UserData;
 
 pub struct TypedSession(Session);
 
 impl TypedSession {
-    const USER_ID_KEY: &'static str = "user_id";
+    const USER_KEY: &'static str = "user";
 
     pub fn renew(&self) {
         self.0.renew();
     }
 
-    pub fn insert_user_id(&self, user_id: Uuid) -> Result<(), SessionInsertError> {
-        self.0.insert(Self::USER_ID_KEY, user_id)
+    pub fn insert_user(&self, user: UserData) -> Result<(), SessionInsertError> {
+        self.0.insert(Self::USER_KEY, user)
     }
 
-    pub fn get_user_id(&self) -> Result<Option<Uuid>, SessionGetError> {
-        self.0.get(Self::USER_ID_KEY)
+    pub fn get_user(&self) -> Result<Option<UserData>, SessionGetError> {
+        self.0.get(Self::USER_KEY)
     }
 
     pub fn log_out(self) {

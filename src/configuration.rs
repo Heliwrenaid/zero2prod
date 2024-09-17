@@ -5,7 +5,7 @@ use serde_aux::field_attributes::deserialize_number_from_string;
 use sqlx::postgres::{PgConnectOptions, PgSslMode};
 use sqlx::ConnectOptions;
 
-use crate::domain::SubscriberEmail;
+use crate::domain::Email;
 
 #[derive(Deserialize, Clone)]
 pub struct Settings {
@@ -35,8 +35,8 @@ impl EmailClientSettings {
         )
     }
 
-    pub fn sender(&self) -> Result<SubscriberEmail, String> {
-        SubscriberEmail::parse(self.sender_email.clone())
+    pub fn sender(&self) -> Result<Email, String> {
+        Email::parse(self.sender_email.clone())
     }
 
     pub fn timeout(&self) -> std::time::Duration {

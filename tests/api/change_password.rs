@@ -41,15 +41,15 @@ async fn new_password_fields_must_match() {
 
     // Act - Part 1 - Login
     app.post_login(&serde_json::json!({
-        "username": &app.test_user.username,
-        "password": &app.test_user.password
+        "username": &app.admin_user.username,
+        "password": &app.admin_user.password
     }))
     .await;
 
     // Act - Part 2 - Try to change password
     let response = app
         .post_change_password(&serde_json::json!({
-            "current_password": &app.test_user.password,
+            "current_password": &app.admin_user.password,
             "new_password": &new_password,
             "new_password_check": &another_new_password,
         }))
@@ -73,8 +73,8 @@ async fn current_password_must_be_valid() {
 
     // Act - Part 1 - Login
     app.post_login(&serde_json::json!({
-        "username": &app.test_user.username,
-        "password": &app.test_user.password
+        "username": &app.admin_user.username,
+        "password": &app.admin_user.password
     }))
     .await;
 
@@ -102,8 +102,8 @@ async fn new_password_should_has_proper_length() {
 
     // Act - Part 1 - Login
     app.post_login(&serde_json::json!({
-        "username": &app.test_user.username,
-        "password": &app.test_user.password
+        "username": &app.admin_user.username,
+        "password": &app.admin_user.password
     }))
     .await;
 
@@ -116,7 +116,7 @@ async fn new_password_should_has_proper_length() {
         // Act - Part 2 - Try to change password
         let response = app
             .post_change_password(&serde_json::json!({
-                "current_password": &app.test_user.password,
+                "current_password": &app.admin_user.password,
                 "new_password": pass,
                 "new_password_check": pass,
             }))
@@ -139,8 +139,8 @@ async fn changing_password_works() {
 
     // Act - Part 1 - Login
     let login_body = serde_json::json!({
-        "username": &app.test_user.username,
-        "password": &app.test_user.password
+        "username": &app.admin_user.username,
+        "password": &app.admin_user.password
     });
     let response = app.post_login(&login_body).await;
     assert_is_redirect_to(&response, "/admin/dashboard");
@@ -148,7 +148,7 @@ async fn changing_password_works() {
     // Act - Part 2 - Change password
     let response = app
         .post_change_password(&serde_json::json!({
-        "current_password": &app.test_user.password,
+        "current_password": &app.admin_user.password,
         "new_password": &new_password,
         "new_password_check": &new_password,
         }))
@@ -169,7 +169,7 @@ async fn changing_password_works() {
 
     // Act - Part 6 - Login using the new password
     let login_body = serde_json::json!({
-        "username": &app.test_user.username,
+        "username": &app.admin_user.username,
         "password": &new_password
     });
     let response = app.post_login(&login_body).await;

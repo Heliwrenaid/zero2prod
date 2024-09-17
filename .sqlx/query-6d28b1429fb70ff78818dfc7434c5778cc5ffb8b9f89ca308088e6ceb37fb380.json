@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO collabolator_activation_tokens (email, token, created_at)\n            VALUES ($1, $2, $3)\n            ON CONFLICT (email) \n            DO UPDATE SET token = EXCLUDED.token, created_at = EXCLUDED.created_at;\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6d28b1429fb70ff78818dfc7434c5778cc5ffb8b9f89ca308088e6ceb37fb380"
+}

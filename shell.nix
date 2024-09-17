@@ -1,26 +1,16 @@
-let
-  rust_overlay = import (builtins.fetchTarball "https://github.com/oxalica/rust-overlay/archive/master.tar.gz");
-  pkgs = import <nixpkgs> { overlays = [ rust_overlay ]; };
-  rustVersion = "1.78.0";
-  rust = pkgs.rust-bin.stable.${rustVersion}.default.override {
-    extensions = [
-      "rust-src"
-      "rust-analyzer"
-    ];
-  };
-in
+{ pkgs ? import <nixpkgs> {} }:
 pkgs.mkShell {
-  buildInputs = [
-    rust
-  ] ++ (with pkgs; [
-    # gcc
-    # rustfmt
-    # clippy
-    pkg-config
-    libiconv
-    openssl
-    postgresql
-    dbeaver
-  ]);
-  RUST_BACKTRACE = 1;
+  nativeBuildInputs = with pkgs; [ rustc rustfmt cargo pkg-config libiconv openssl postgresql bunyan-rs dbeaver-bin ];
+
+  # Certain Rust tools won't work without this
+  # This can also be fixed by using oxalica/rust-overlay and specifying the rust-src extension
+  # See https://discourse.nixos.org/t/rust-src-not-found-and-other-misadventures-of-developing-rust-on-nixos/11570/3?u=samuela. for more details.
+  RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
+  # RUST_TEST_THREADS=1;
 }
+
+# docker run -d -p 8080:8080 -v $(pwd)/mappings:/home/wiremock/mappings wiremock/wiremock
+
+
+# http://localhost:8080/__admin/requests
+# http://localhost:8080/__admin/mappings

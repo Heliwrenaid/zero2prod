@@ -4,7 +4,9 @@ use once_cell::sync::Lazy;
 use reqwest::Url;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use uuid::Uuid;
-use wiremock::MockServer;
+use wiremock::matchers::{method, path};
+use wiremock::{Mock, MockBuilder, MockServer};
+use zero2prod::authentication::UserRole;
 use zero2prod::configuration::{get_configuration, DatabaseSettings};
 use zero2prod::email_client::EmailClient;
 use zero2prod::issue_delivery_worker::{try_execute_task, ExecutionOutcome};
@@ -28,14 +30,16 @@ pub struct TestUser {
     pub user_id: Uuid,
     pub username: String,
     pub password: String,
+    pub role: UserRole,
 }
 
 impl TestUser {
-    pub fn generate() -> Self {
+    pub fn generate(role: UserRole) -> Self {
         Self {
             user_id: Uuid::new_v4(),
             username: Uuid::new_v4().to_string(),
             password: Uuid::new_v4().to_string(),
+            role,
         }
     }
 
@@ -51,10 +55,11 @@ impl TestUser {
         .to_string();
 
         sqlx::query!(
-            "INSERT INTO users (user_id, username, password_hash) VALUES ($1, $2, $3)",
+            "INSERT INTO users (user_id, username, password_hash, role) VALUES ($1, $2, $3, $4)",
             self.user_id,
             self.username,
             password_hash,
+            self.role.to_string()
         )
         .execute(pool)
         .await
@@ -73,7 +78,8 @@ pub struct TestApp {
     pub port: u16,
     pub db_pool: PgPool,
     pub email_server: MockServer,
-    pub test_user: TestUser,
+    pub admin_user: TestUser,
+    pub collabolator_user: TestUser,
     pub api_client: reqwest::Client,
     pub email_client: EmailClient,
 }
@@ -206,10 +212,18 @@ impl TestApp {
             .expect("Failed to execute request.")
     }
 
-    pub async fn login_with_test_user(&self) {
+    pub async fn login_with_admin_user(&self) {
         self.post_login(&serde_json::json!({
-            "username": &self.test_user.username,
-            "password": &self.test_user.password
+            "username": &self.admin_user.username,
+            "password": &self.admin_user.password
+        }))
+        .await;
+    }
+
+    pub async fn login_with_collabolator_user(&self) {
+        self.post_login(&serde_json::json!({
+            "username": &self.collabolator_user.username,
+            "password": &self.collabolator_user.password
         }))
         .await;
     }
@@ -224,6 +238,63 @@ impl TestApp {
                 break;
             }
         }
+    }
+
+    pub async fn get_invite_form(&self) -> reqwest::Response {
+        self.api_client
+            .get(&format!("{}/admin/collabolators", &self.address))
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+
+    pub async fn get_invite_form_html(&self) -> String {
+        self.get_invite_form()
+            .await
+            .text()
+            .await
+            .expect("Cannot fetch HTML content")
+    }
+
+    pub async fn post_invite<Body: serde::Serialize>(&self, body: &Body) -> reqwest::Response {
+        self.api_client
+            .post(&format!("{}/admin/collabolators", &self.address))
+            .form(body)
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+
+    pub async fn get_account_activate_form<Query: serde::Serialize>(
+        &self,
+        query: &Query,
+    ) -> reqwest::Response {
+        self.api_client
+            .get(&format!("{}/collabolators/activate", &self.address))
+            .query(query)
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+
+    pub async fn get_account_activate_form_html(&self, token: &str) -> String {
+        self.get_account_activate_form(&[("token", token)])
+            .await
+            .text()
+            .await
+            .expect("Cannot fetch HTML content")
+    }
+
+    pub async fn post_account_activate<Body: serde::Serialize>(
+        &self,
+        body: &Body,
+    ) -> reqwest::Response {
+        self.api_client
+            .post(&format!("{}/collabolators/activate", &self.address))
+            .form(body)
+            .send()
+            .await
+            .expect("Failed to execute request.")
     }
 }
 
@@ -266,11 +337,13 @@ pub async fn spawn_app() -> TestApp {
         port,
         db_pool: get_connection_pool(&configuration.database),
         email_server,
-        test_user: TestUser::generate(),
+        admin_user: TestUser::generate(UserRole::Admin),
+        collabolator_user: TestUser::generate(UserRole::Collabolator),
         api_client: client,
         email_client: configuration.email_client.client(),
     };
-    test_app.test_user.store(&test_app.db_pool).await;
+    test_app.admin_user.store(&test_app.db_pool).await;
+    test_app.collabolator_user.store(&test_app.db_pool).await;
     test_app
 }
 
@@ -299,4 +372,9 @@ async fn configure_database(config: &DatabaseSettings) -> PgPool {
 pub fn assert_is_redirect_to(response: &reqwest::Response, location: &str) {
     assert_eq!(response.status().as_u16(), 303);
     assert_eq!(response.headers().get("Location").unwrap(), location);
+}
+
+// Short-hand for a common mocking setup
+pub fn when_sending_an_email() -> MockBuilder {
+    Mock::given(path("/email")).and(method("POST"))
 }

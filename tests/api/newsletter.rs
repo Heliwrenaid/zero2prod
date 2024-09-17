@@ -2,18 +2,18 @@ use fake::faker::internet::en::SafeEmail;
 use fake::faker::name::en::Name;
 use fake::Fake;
 use std::time::Duration;
-use wiremock::MockBuilder;
 
-use crate::helpers::{assert_is_redirect_to, spawn_app, ConfirmationLinks, TestApp};
-use wiremock::matchers::{any, method, path};
-use wiremock::{Mock, ResponseTemplate};
+use crate::helpers::{
+    assert_is_redirect_to, spawn_app, when_sending_an_email, ConfirmationLinks, TestApp,
+};
+use wiremock::{matchers::any, Mock, ResponseTemplate};
 
 #[tokio::test]
 async fn newsletters_are_not_delivered_to_unconfirmed_subscribers() {
     // Arrange
     let app = spawn_app().await;
     create_unconfirmed_subscriber(&app).await;
-    app.login_with_test_user().await;
+    app.login_with_admin_user().await;
 
     Mock::given(any())
         .respond_with(ResponseTemplate::new(200))
@@ -44,10 +44,9 @@ async fn newsletters_are_delivered_to_confirmed_subscribers() {
     // Arrange
     let app = spawn_app().await;
     create_confirmed_subscriber(&app).await;
-    app.login_with_test_user().await;
+    app.login_with_admin_user().await;
 
-    Mock::given(path("/email"))
-        .and(method("POST"))
+    when_sending_an_email()
         .respond_with(ResponseTemplate::new(200))
         .expect(1)
         .mount(&app.email_server)
@@ -75,7 +74,7 @@ async fn newsletters_are_delivered_to_confirmed_subscribers() {
 async fn newsletters_returns_400_for_invalid_data() {
     // Arrange
     let app = spawn_app().await;
-    app.login_with_test_user().await;
+    app.login_with_admin_user().await;
     let test_cases = vec![
         (
             serde_json::json!({
@@ -134,10 +133,9 @@ async fn newsletter_creation_is_idempotent() {
     // Arrange
     let app = spawn_app().await;
     create_confirmed_subscriber(&app).await;
-    app.login_with_test_user().await;
+    app.login_with_admin_user().await;
 
-    Mock::given(path("/email"))
-        .and(method("POST"))
+    when_sending_an_email()
         .respond_with(ResponseTemplate::new(200))
         .expect(1)
         .mount(&app.email_server)
@@ -175,9 +173,8 @@ async fn concurrent_form_submission_is_handled_gracefully() {
     // Arrange
     let app = spawn_app().await;
     create_confirmed_subscriber(&app).await;
-    app.login_with_test_user().await;
-    Mock::given(path("/email"))
-        .and(method("POST"))
+    app.login_with_admin_user().await;
+    when_sending_an_email()
         // Setting a long delay to ensure that the second request
         // arrives before the first one completes
         .respond_with(ResponseTemplate::new(200).set_delay(Duration::from_secs(2)))
@@ -209,8 +206,7 @@ async fn create_unconfirmed_subscriber(app: &TestApp) -> ConfirmationLinks {
     }))
     .unwrap();
 
-    let _mock_guard = Mock::given(path("/email"))
-        .and(method("POST"))
+    let _mock_guard = when_sending_an_email()
         .respond_with(ResponseTemplate::new(200))
         .named("Create unconfirmed subscriber")
         .expect(1)
@@ -248,9 +244,4 @@ fn create_valid_publish_request_body() -> impl serde::Serialize {
         "html_content": "<p>Newsletter body as HTML</p>",
         "idempotency_key": uuid::Uuid::new_v4().to_string()
     })
-}
-
-// Short-hand for a common mocking setup
-fn when_sending_an_email() -> MockBuilder {
-    Mock::given(path("/email")).and(method("POST"))
 }
