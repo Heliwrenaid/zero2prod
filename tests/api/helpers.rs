@@ -1,5 +1,7 @@
+use anyhow::bail;
 use argon2::password_hash::SaltString;
 use argon2::{Algorithm, Argon2, Params, PasswordHasher, Version};
+use chrono::{DateTime, Utc};
 use once_cell::sync::Lazy;
 use reqwest::Url;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
@@ -71,6 +73,12 @@ impl TestUser {
 pub struct ConfirmationLinks {
     pub html: reqwest::Url,
     pub plain_text: reqwest::Url,
+}
+
+// task from issue_delivery_queue
+pub struct Task {
+    pub n_retries: Option<i16>,
+    pub execute_after: Option<DateTime<Utc>>,
 }
 
 pub struct TestApp {
@@ -228,16 +236,30 @@ impl TestApp {
         .await;
     }
 
-    pub async fn dispatch_all_pending_emails(&self) {
+    pub async fn dispatch_all_pending_emails(&self) -> Result<(), anyhow::Error> {
         loop {
-            if let ExecutionOutcome::EmptyQueue =
-                try_execute_task(&self.db_pool, &self.email_client)
-                    .await
-                    .unwrap()
-            {
-                break;
+            match try_execute_task(&self.db_pool, &self.email_client).await {
+                Ok(status) => {
+                    if let ExecutionOutcome::EmptyQueue = status {
+                        break;
+                    }
+                }
+                Err(err) => bail!(err),
             }
         }
+        Ok(())
+    }
+
+    pub async fn fetch_task(&self) -> Task {
+        sqlx::query_as!(
+            Task,
+            "SELECT n_retries, execute_after 
+            FROM issue_delivery_queue 
+            LIMIT 1"
+        )
+        .fetch_one(&self.db_pool)
+        .await
+        .unwrap()
     }
 
     pub async fn get_invite_form(&self) -> reqwest::Response {
