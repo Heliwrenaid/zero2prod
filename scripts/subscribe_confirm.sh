@@ -1,0 +1,1 @@
+curl http://localhost:8000/subscriptions/confirm?subscription_token=$1

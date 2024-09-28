@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE issue_delivery_queue\n            SET n_retries = $1, execute_after = $2\n            WHERE newsletter_issue_id = $3",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int2",
+        "Timestamptz",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d64ba02fc43ef03bd8f587df8fb42bc1b64452591f90d802197cb901bf8a2960"
+}
