@@ -241,6 +241,58 @@ async fn newsletter_creation_is_idempotent() {
 }
 
 #[tokio::test]
+async fn idempotency_keys_are_removed_after_expiration() {
+    // Arrange
+    let app = spawn_app().await;
+    create_confirmed_subscriber(&app).await;
+    app.login_with_admin_user().await;
+
+    // Act 1 - Submit newsletter form
+    let newsletter_request_body = create_valid_publish_request_body();
+
+    let response = app.post_publish_newsletter(&newsletter_request_body).await;
+    assert_is_redirect_to(&response, "/admin/newsletters");
+
+    // Assert
+    let count = app.count_idempotency_keys().await;
+    assert_eq!(1, count);
+
+    // Act 2 - try remove idempotency keys
+    app.remove_old_idempotency_keys().await;
+
+    // Assert
+    let count = app.count_idempotency_keys().await;
+    assert_eq!(1, count); // idempotency key is not removed, bcoz it not expired yet
+
+    // Act 3 - create expired idempotency key
+    sqlx::query!(
+        r#"
+        INSERT INTO idempotency (
+            user_id,
+            idempotency_key,
+            created_at
+        )
+        VALUES ($1, 'some_key', NOW() - INTERVAL '25 hours')
+        "#,
+        app.admin_user.user_id,
+    )
+    .execute(&app.db_pool)
+    .await
+    .unwrap();
+
+    // Assert
+    let count = app.count_idempotency_keys().await;
+    assert_eq!(2, count);
+
+    // Act 4 - try remove idempotency keys
+    app.remove_old_idempotency_keys().await;
+
+    // Assert
+    let count = app.count_idempotency_keys().await;
+    assert_eq!(1, count);
+}
+
+#[tokio::test]
 async fn concurrent_form_submission_is_handled_gracefully() {
     // Arrange
     let app = spawn_app().await;

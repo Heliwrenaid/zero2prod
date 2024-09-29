@@ -11,6 +11,7 @@ use wiremock::{Mock, MockBuilder, MockServer};
 use zero2prod::authentication::UserRole;
 use zero2prod::configuration::{get_configuration, DatabaseSettings};
 use zero2prod::email_client::EmailClient;
+use zero2prod::idempotency;
 use zero2prod::issue_delivery_worker::{try_execute_task, ExecutionOutcome};
 use zero2prod::startup::{get_connection_pool, Application};
 use zero2prod::telemetry::{get_subscriber, init_subscriber};
@@ -248,6 +249,19 @@ impl TestApp {
             }
         }
         Ok(())
+    }
+
+    pub async fn count_idempotency_keys(&self) -> i64 {
+        sqlx::query_scalar("SELECT COUNT(*) FROM idempotency")
+            .fetch_one(&self.db_pool)
+            .await
+            .unwrap()
+    }
+
+    pub async fn remove_old_idempotency_keys(&self) {
+        idempotency::try_delete_expired_keys(&self.db_pool)
+            .await
+            .unwrap()
     }
 
     pub async fn fetch_task(&self) -> Task {
