@@ -19,7 +19,7 @@ pkgs.mkShell {
     source .env
     if ! command -v sqlx > /dev/null; then
       echo "Installing sqlx-cli..."
-      cargo install --version='~0.7' sqlx-cli --no-default-features --features rustls,postgres
+      cargo install --version='~0.8' sqlx-cli --no-default-features --features rustls,postgres
     fi
   '';
 }

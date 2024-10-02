@@ -1,7 +1,7 @@
 use super::IdempotencyKey;
 use actix_web::{body::to_bytes, HttpResponse};
 use reqwest::StatusCode;
-use sqlx::{postgres::PgHasArrayType, PgPool};
+use sqlx::PgPool;
 use sqlx::{Executor, Postgres, Transaction};
 use uuid::Uuid;
 
@@ -10,12 +10,6 @@ use uuid::Uuid;
 struct HeaderPairRecord {
     name: String,
     value: Vec<u8>,
-}
-
-impl PgHasArrayType for HeaderPairRecord {
-    fn array_type_info() -> sqlx::postgres::PgTypeInfo {
-        sqlx::postgres::PgTypeInfo::with_name("_header_pair")
-    }
 }
 
 pub async fn get_saved_response(

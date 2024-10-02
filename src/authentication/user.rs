@@ -36,8 +36,8 @@ impl sqlx::Type<Postgres> for UserPassword {
 impl<'q> Encode<'q, Postgres> for UserPassword {
     fn encode_by_ref(
         &self,
-        buf: &mut <Postgres as sqlx::database::HasArguments<'q>>::ArgumentBuffer,
-    ) -> sqlx::encode::IsNull {
+        buf: &mut <Postgres as sqlx::Database>::ArgumentBuffer<'q>,
+    ) -> Result<sqlx::encode::IsNull, sqlx::error::BoxDynError> {
         <String as Encode<Postgres>>::encode(self.0.expose_secret().clone(), buf)
     }
 }
