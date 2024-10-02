@@ -324,7 +324,7 @@ async fn concurrent_form_submission_is_handled_gracefully() {
 async fn create_unconfirmed_subscriber(app: &TestApp) -> ConfirmationLinks {
     let name: String = Name().fake();
     let email: String = SafeEmail().fake();
-    let body = serde_urlencoded::to_string(&serde_json::json!({
+    let body = serde_urlencoded::to_string(serde_json::json!({
         "name": name,
         "email": email
     }))
@@ -337,7 +337,7 @@ async fn create_unconfirmed_subscriber(app: &TestApp) -> ConfirmationLinks {
         .mount_as_scoped(&app.email_server)
         .await;
 
-    app.post_subscriptions(body.into())
+    app.post_subscriptions(body)
         .await
         .error_for_status()
         .unwrap();
@@ -349,7 +349,7 @@ async fn create_unconfirmed_subscriber(app: &TestApp) -> ConfirmationLinks {
         .unwrap()
         .pop()
         .unwrap();
-    app.get_confirmation_links(&email_request)
+    app.get_confirmation_links(email_request)
 }
 
 async fn create_confirmed_subscriber(app: &TestApp) {

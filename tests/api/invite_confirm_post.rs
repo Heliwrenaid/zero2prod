@@ -63,7 +63,7 @@ async fn return_error_when_token_not_exists_in_db() {
     let username = "user123456";
 
     // Act 1 - activate account
-    let form = generate_form_data(&username, &pass, &pass);
+    let form = generate_form_data(username, &pass, &pass);
     let response = app.post_account_activate(&form).await;
 
     // Assert
@@ -95,7 +95,7 @@ async fn return_error_when_token_is_expired() {
     .unwrap();
 
     // Act 1 - activate account
-    let form = generate_form_data(&username, &pass, &pass);
+    let form = generate_form_data(username, &pass, &pass);
     let response = app.post_account_activate(&form).await;
 
     // Assert
@@ -128,12 +128,12 @@ async fn should_activate_new_account() {
     .unwrap();
 
     // Act 1 - activate account
-    let form = generate_form_data(&username, &pass, &pass);
+    let form = generate_form_data(username, &pass, &pass);
     let response = app.post_account_activate(&form).await;
 
     // Assert
     assert_is_redirect_to(&response, "/login");
-    let user = get_user_from_db(&username, &app.db_pool).await;
+    let user = get_user_from_db(username, &app.db_pool).await;
     assert!(user.is_some());
     let user = user.unwrap();
     assert_eq!(username, user.username);

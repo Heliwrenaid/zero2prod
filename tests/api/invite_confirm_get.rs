@@ -21,7 +21,7 @@ async fn should_fetch_html_when_token_is_set_in_query() {
     let token = "1239754769274fdgfknbser";
 
     // Act
-    let html = app.get_account_activate_form_html(&token).await;
+    let html = app.get_account_activate_form_html(token).await;
 
     // Assert
     assert!(html.contains(r#"<form action="/collabolators/activate" method="post">"#));
