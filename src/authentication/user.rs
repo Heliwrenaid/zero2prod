@@ -70,12 +70,12 @@ pub struct UserData {
     pub role: UserRole,
 }
 
-impl Into<UserData> for User {
-    fn into(self) -> UserData {
+impl From<User> for UserData {
+    fn from(value: User) -> Self {
         UserData {
-            user_id: self.user_id,
-            username: self.username,
-            role: self.role,
+            user_id: value.user_id,
+            username: value.username,
+            role: value.role,
         }
     }
 }

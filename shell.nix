@@ -3,6 +3,7 @@ pkgs.mkShell {
   nativeBuildInputs = with pkgs; [
     rustc
     rustfmt
+    clippy
     cargo
     pkg-config
     libiconv

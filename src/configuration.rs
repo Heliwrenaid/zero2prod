@@ -66,7 +66,7 @@ impl DatabaseSettings {
         PgConnectOptions::new()
             .host(&self.host)
             .username(&self.username)
-            .password(&self.password.expose_secret())
+            .password(self.password.expose_secret())
             .port(self.port)
             .ssl_mode(ssl_mode)
     }
@@ -165,8 +165,8 @@ impl<'de> serde::Deserialize<'de> for Url {
     }
 }
 
-impl Into<Url> for reqwest::Url {
-    fn into(self) -> Url {
-        Url(self)
+impl From<reqwest::Url> for Url {
+    fn from(value: reqwest::Url) -> Self {
+        Url(value)
     }
 }

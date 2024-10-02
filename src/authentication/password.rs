@@ -34,7 +34,7 @@ pub async fn validate_credentials(
         CWOrkoo7oJBQ/iyh7uJ0LO2aLEfrHwTWllSAxT0zRno"
             .to_string(),
     );
-    if let Some(stored_user) = get_user(&credentials.username, &pool)
+    if let Some(stored_user) = get_user(&credentials.username, pool)
         .await
         .map_err(AuthError::UnexpectedError)?
     {

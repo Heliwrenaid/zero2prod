@@ -38,5 +38,5 @@ pub fn generate_token() -> String {
 
 pub fn is_password_invalid(password: &Secret<String>) -> bool {
     let new_pass_len = password.expose_secret().len();
-    new_pass_len < 13 || new_pass_len > 128
+    !(13..=128).contains(&new_pass_len)
 }

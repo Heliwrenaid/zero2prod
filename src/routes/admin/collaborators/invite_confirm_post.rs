@@ -118,7 +118,7 @@ fn is_token_expired(token_creation_time: &TokenCreationTime) -> bool {
 
 async fn is_user_exists(username: &str, pool: &PgPool) -> Result<bool, anyhow::Error> {
     let row = sqlx::query!("SELECT user_id from users WHERE username = $1", username)
-        .fetch_optional(&*pool)
+        .fetch_optional(pool)
         .await
         .context("Cannot fetch user from database")?;
     Ok(row.is_some())
