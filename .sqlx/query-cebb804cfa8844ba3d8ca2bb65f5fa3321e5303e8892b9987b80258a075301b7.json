@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "ALTER TABLE collabolator_activation_tokens DROP COLUMN token;",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "cebb804cfa8844ba3d8ca2bb65f5fa3321e5303e8892b9987b80258a075301b7"
+}

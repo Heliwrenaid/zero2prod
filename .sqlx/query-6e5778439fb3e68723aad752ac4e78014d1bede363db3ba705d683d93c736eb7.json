@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT n_retries, execute_after \n            FROM issue_delivery_queue \n            LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "n_retries",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 1,
+        "name": "execute_after",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      true,
+      true
+    ]
+  },
+  "hash": "6e5778439fb3e68723aad752ac4e78014d1bede363db3ba705d683d93c736eb7"
+}
