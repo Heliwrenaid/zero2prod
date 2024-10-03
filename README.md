@@ -14,13 +14,13 @@ Compared to the code in the book, I made some improvements and implemented addit
   - collabolator durning account activation can provide username and password
 - retry (with exponential backoff) failed emails deliveries on transient errors
 - automatically clean expired idempotency keys from db
-- add rust-toolchain.toml for pinning Rust version and making pipeline more deterministic (especially `clippy` check)
+- add rust-toolchain.toml for pinning Rust version and making pipeline more deterministic
 
-## Development
+## How to run
 
 ### NixOS
 
-```bash
+```console
 nix-shell
 docker compose up -d
 ./scripts/init_db.sh
@@ -31,10 +31,15 @@ cargo run | bunyan
 
 Install [Rust](https://www.rust-lang.org/) and few system packages needed for compile the project (see [shell.nix](shell.nix) `nativeBuildInputs` section).
 
-```bash
+```console
 source .env
 cargo install --version='~0.8' sqlx-cli --no-default-features --features rustls,postgres
 docker compose up -d
 ./scripts/init_db.sh
 cargo run | bunyan
 ```
+
+### Notes
+
+> [!NOTE]  
+> There is a default `admin` account with password `everythinghastostartsomewhere`. The available entrypoints are listed in [src/startup.rs](src/startup.rs)
