@@ -7,6 +7,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUST_VERSION: 1.77.2
   SQLX_VERSION: 0.8.2
   SQLX_FEATURES: "rustls,postgres"
   APP_USER: app
@@ -37,7 +38,7 @@ jobs:
       - name: Install the Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: 1.77.2
+          toolchain: ${{ env.RUST_VERSION }}
 
       - name: Install sqlx-cli
         run:
@@ -78,7 +79,7 @@ jobs:
       - name: Install the Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: 1.77.2
+          toolchain: ${{ env.RUST_VERSION }}
           components: rustfmt
       - name: Enforce formatting
         run: cargo fmt --check
@@ -93,7 +94,7 @@ jobs:
       - name: Install the Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: 1.77.2
+          toolchain: ${{ env.RUST_VERSION }}
           components: clippy
       - name: Linting
         run: cargo clippy --all-targets --all-features -- -D warnings
@@ -119,7 +120,7 @@ jobs:
       - name: Install the Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: 1.77.2
+          toolchain: ${{ env.RUST_VERSION }}
           components: llvm-tools-preview
       - name: Install sqlx-cli
         run: cargo install sqlx-cli
